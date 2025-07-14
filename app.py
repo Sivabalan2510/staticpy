@@ -5,24 +5,22 @@ import mimetypes
 
 app = Flask(__name__)
 
-# Get and validate the connection string
-AZURE_STORAGE_CONNECTION_STRING = os.getenv("AZURE_STORAGE_CONNECTION_STRING")
+# Get SAS URL for container (including container path and SAS token)
+AZURE_STORAGE_SAS_URL = os.getenv("AZURE_STORAGE_SAS_URL")
 
-if not AZURE_STORAGE_CONNECTION_STRING:
-    print("❌ ERROR: AZURE_STORAGE_CONNECTION_STRING is not set.")
+if not AZURE_STORAGE_SAS_URL:
+    print("❌ ERROR: AZURE_STORAGE_SAS_URL is not set.")
     exit(1)
-    
 
-# Set up Blob service
-blob_service_client = BlobServiceClient.from_connection_string(AZURE_STORAGE_CONNECTION_STRING)
+# Initialize BlobServiceClient with the SAS URL
+blob_service_client = BlobServiceClient(account_url=AZURE_STORAGE_SAS_URL)
 container_name = "$web"
 
-# ✅ Keep just ONE root route
 @app.route('/')
 def index():
-    return "🚀 Welcome to the Static Site Router! Use /site_name/path/to/file to fetch files."
+    return "🚀 Welcome! Use /site_name/path/to/file to fetch files."
 
-# Route to serve static site files
+@app.route('/<site>/', defaults={'filename': 'index.html'})
 @app.route('/<site>/<path:filename>')
 def serve_static_site(site, filename):
     blob_path = f"{site}/{filename}"
@@ -33,7 +31,6 @@ def serve_static_site(site, filename):
         stream = blob_client.download_blob()
         content = stream.readall()
 
-        # Guess the correct MIME type
         mime_type, _ = mimetypes.guess_type(filename)
         mime_type = mime_type or "application/octet-stream"
 
