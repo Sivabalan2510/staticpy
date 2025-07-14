@@ -18,7 +18,7 @@ print(f"✅ AZURE_STORAGE_CONNECTION_STRING loaded: {masked}")
 
 # Set up Blob service
 blob_service_client = BlobServiceClient.from_connection_string(AZURE_STORAGE_CONNECTION_STRING)
-container_name = "web"
+container_name = "$web"
 
 # Route to serve static site files
 @app.route('/<site>/<path:filename>')
