@@ -1,13 +1,12 @@
-import os
 from flask import Flask, Response, abort
 from azure.storage.blob import BlobServiceClient
+import os
 
 app = Flask(__name__)
 
 AZURE_STORAGE_CONNECTION_STRING = os.getenv("AZURE_STORAGE_CONNECTION_STRING")
-
 if not AZURE_STORAGE_CONNECTION_STRING:
-    raise ValueError("AZURE_STORAGE_CONNECTION_STRING environment variable is not set.")
+    raise ValueError("AZURE_STORAGE_CONNECTION_STRING is not set.")
 
 blob_service_client = BlobServiceClient.from_connection_string(AZURE_STORAGE_CONNECTION_STRING)
 container_name = "web"
