@@ -11,10 +11,7 @@ AZURE_STORAGE_CONNECTION_STRING = os.getenv("AZURE_STORAGE_CONNECTION_STRING")
 if not AZURE_STORAGE_CONNECTION_STRING:
     print("❌ ERROR: AZURE_STORAGE_CONNECTION_STRING is not set.")
     exit(1)
-
-# Optional: partially mask the connection string for log visibility
-masked = AZURE_STORAGE_CONNECTION_STRING[:30] + "..." if AZURE_STORAGE_CONNECTION_STRING else "None"
-print(f"✅ AZURE_STORAGE_CONNECTION_STRING loaded: {masked}")
+    
 
 # Set up Blob service
 blob_service_client = BlobServiceClient.from_connection_string(AZURE_STORAGE_CONNECTION_STRING)
