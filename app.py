@@ -20,6 +20,7 @@ print(f"✅ AZURE_STORAGE_CONNECTION_STRING loaded: {masked}")
 blob_service_client = BlobServiceClient.from_connection_string(AZURE_STORAGE_CONNECTION_STRING)
 container_name = "$web"
 
+# ✅ Keep just ONE root route
 @app.route('/')
 def index():
     return "🚀 Welcome to the Static Site Router! Use /site_name/path/to/file to fetch files."
@@ -44,9 +45,3 @@ def serve_static_site(site, filename):
     except Exception as e:
         print(f"❌ Error fetching blob: {e}")
         abort(404)
-
-# Root route
-@app.route('/')
-def index():
-    return "🚀 Welcome to the Static Site Router!"
-
