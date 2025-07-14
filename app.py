@@ -1,23 +1,28 @@
-from flask import Flask, Response
+from flask import Flask, Response, abort
 from azure.storage.blob import BlobServiceClient
 import os
-import mimetypes
 
 app = Flask(__name__)
 
+# Load connection string from environment variable
 AZURE_STORAGE_CONNECTION_STRING = os.getenv("AZURE_STORAGE_CONNECTION_STRING")
-CONTAINER_NAME = "$web"
 blob_service_client = BlobServiceClient.from_connection_string(AZURE_STORAGE_CONNECTION_STRING)
+container_name = "web"
 
-@app.route('/<path:file_path>')
-def serve_static(file_path):
+@app.route('/<site>/<path:filename>')
+def serve_static_site(site, filename):
+    blob_path = f"{site}/{filename}"
     try:
-        blob_client = blob_service_client.get_blob_client(container=CONTAINER_NAME, blob=file_path)
-        blob_data = blob_client.download_blob().readall()
-        mime_type, _ = mimetypes.guess_type(file_path)
-        return Response(blob_data, mimetype=mime_type or 'application/octet-stream')
+        blob_client = blob_service_client.get_blob_client(container=container_name, blob=blob_path)
+        stream = blob_client.download_blob()
+        content = stream.readall()
+        # You can improve MIME type detection here if needed
+        return Response(content, mimetype='text/html')
     except Exception as e:
-        return f"Error fetching file: {str(e)}", 404
+        print(f"Error fetching blob: {e}")
+        abort(404)
 
-if __name__ == '__main__':
-    app.run()
+@app.route('/')
+def index():
+    return "Welcome to the Static Site Router!"
+
