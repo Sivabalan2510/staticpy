@@ -1,6 +1,7 @@
 from flask import Flask, Response
 from azure.identity import DefaultAzureCredential
 from azure.storage.blob import BlobServiceClient
+from azure.identity import ManagedIdentityCredential
 import os
 
 app = Flask(__name__)
@@ -13,7 +14,7 @@ CONTAINER_NAME = "$web"
 BLOB_URL = f"https://{STORAGE_ACCOUNT_NAME}.blob.core.windows.net"
 
 # Use Managed Identity (system-assigned) to authenticate
-credential = DefaultAzureCredential()
+credential = ManagedIdentityCredential()
 blob_service_client = BlobServiceClient(account_url=BLOB_URL, credential=credential)
 container_client = blob_service_client.get_container_client(CONTAINER_NAME)
 
