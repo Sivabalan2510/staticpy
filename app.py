@@ -1,41 +1,32 @@
-from flask import Flask, Response, abort
+from flask import Flask, Response
+from azure.identity import DefaultAzureCredential
 from azure.storage.blob import BlobServiceClient
 import os
-import mimetypes
 
 app = Flask(__name__)
 
-# Get the full SAS URL to the storage account (including SAS token)
-AZURE_STORAGE_SAS_URL = os.getenv("AZURE_STORAGE_SAS_URL")
+# Replace this with your actual storage account name
+STORAGE_ACCOUNT_URL = "https://staticciwebstg.blob.core.windows.net"
 CONTAINER_NAME = "$web"
 
-if not AZURE_STORAGE_SAS_URL:
-    raise RuntimeError("AZURE_STORAGE_SAS_URL environment variable is not set")
+# Authenticate using Managed Identity
+credential = DefaultAzureCredential()
+blob_service_client = BlobServiceClient(account_url=STORAGE_ACCOUNT_URL, credential=credential)
+container_client = blob_service_client.get_container_client(CONTAINER_NAME)
 
-# Initialize BlobServiceClient using the SAS URL
-blob_service_client = BlobServiceClient(account_url=AZURE_STORAGE_SAS_URL)
-
-@app.route('/')
-def home():
-    return "🚀 Welcome! Use /site_name/ or /site_name/path/to/file to fetch files."
-
-@app.route('/<site>/', defaults={'filename': 'index.html'})
-@app.route('/<site>/<path:filename>')
-def serve_file(site, filename):
-    blob_path = f"{site}/{filename}"
-
+@app.route('/<site>/', defaults={'path': 'index.html'})
+@app.route('/<site>/<path:path>')
+def proxy(site, path):
+    blob_path = f"{site}/{path}"
     try:
-        blob_client = blob_service_client.get_blob_client(container=CONTAINER_NAME, blob=blob_path)
-        blob_data = blob_client.download_blob().readall()
-
-        mime_type, _ = mimetypes.guess_type(filename)
-        mime_type = mime_type or 'application/octet-stream'
-
-        return Response(blob_data, mimetype=mime_type)
-
+        blob_client = container_client.get_blob_client(blob_path)
+        downloader = blob_client.download_blob()
+        data = downloader.readall()
+        content_type = blob_client.get_blob_properties().content_settings.content_type
+        return Response(data, mimetype=content_type or 'application/octet-stream')
     except Exception as e:
-        app.logger.error(f"Failed to fetch blob '{blob_path}': {e}")
-        abort(404)
+        print(f"Blob not found: {blob_path} - {e}")
+        return Response(f"404 - Not Found: {blob_path}", status=404)
 
-if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0')
+if __name__ == "__main__":
+    app.run(host='0.0.0.0', port=8000)
