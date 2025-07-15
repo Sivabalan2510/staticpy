@@ -1,3 +1,2 @@
-flask
-azure-identity
-azure-storage-blob
+Flask
+requests
