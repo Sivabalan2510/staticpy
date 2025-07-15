@@ -4,6 +4,9 @@ import mimetypes
 
 app = Flask(__name__)
 
+def hello():
+    return "Hello from Flask!"
+    
 # Replace these with your actual storage details
 STORAGE_ACCOUNT = "staticstgci"
 CONTAINER_NAME = "$web"
