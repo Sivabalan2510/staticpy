@@ -1,43 +1,29 @@
-from flask import Flask, Response
-from azure.identity import ManagedIdentityCredential
-from azure.storage.blob import BlobServiceClient
-from azure.core.exceptions import ClientAuthenticationError, ResourceNotFoundError
-import os
+from flask import Flask, Response, abort
+import requests
+import mimetypes
 
 app = Flask(__name__)
 
-STORAGE_ACCOUNT_NAME = "staticciwebstg"  # <- Update if needed
+# Replace these with your actual storage details
+STORAGE_ACCOUNT = "staticstgci"
 CONTAINER_NAME = "$web"
-BLOB_URL = f"https://{STORAGE_ACCOUNT_NAME}.blob.core.windows.net"
+SAS_TOKEN = "sv=2024-11-04&ss=b&srt=sco&sp=rltfx&se=2025-07-15T19:22:02Z&st=2025-07-11T11:07:02Z&spr=https&sig=BiJU%2F23C47MWXiQgWpEcHVld%2BKUPh7G664C9xXPByXg%3D"
 
-# Authenticate using Managed Identity
-credential = ManagedIdentityCredential()
+@app.route('/<site>/')
+@app.route('/<site>/<path:filename>')
+def serve_site(site, filename="index.html"):
+    blob_url = f"https://{STORAGE_ACCOUNT}.blob.core.windows.net/{CONTAINER_NAME}/{site}/{filename}?{SAS_TOKEN}"
 
-# OPTIONAL: Debug check to verify token acquisition
-try:
-    token = credential.get_token("https://storage.azure.com/.default")
-    print("✅ Access token obtained")
-except ClientAuthenticationError as e:
-    print("❌ Token failure:", e)
+    resp = requests.get(blob_url)
+    if resp.status_code != 200:
+        return abort(resp.status_code)
 
-# Create blob service client
-blob_service_client = BlobServiceClient(account_url=BLOB_URL, credential=credential)
-container_client = blob_service_client.get_container_client(CONTAINER_NAME)
+    mime_type, _ = mimetypes.guess_type(filename)
+    return Response(resp.content, mimetype=mime_type or "application/octet-stream")
 
-@app.route('/<site>/', defaults={'path': 'index.html'})
-@app.route('/<site>/<path:path>')
-def serve_blob(site, path):
-    blob_path = f"{site}/{path}"
-    print(f"📦 Requesting blob: {blob_path}")
-    try:
-        blob_client = container_client.get_blob_client(blob_path)
-        blob_data = blob_client.download_blob().readall()
-        properties = blob_client.get_blob_properties()
-        content_type = properties.content_settings.content_type or "application/octet-stream"
-        return Response(blob_data, mimetype=content_type)
-    except ResourceNotFoundError:
-        print(f"⚠️ Blob not found: {blob_path}")
-        return Response(f"404 - Not Found: {blob_path}", status=404)
-    except Exception as e:
-        print(f"❌ Error loading blob '{blob_path}': {e}")
-        return Response(f"500 - Server Error", status=500)
+@app.route('/')
+def root():
+    return "Flask Proxy is running. Try /site1/"
+
+if __name__ == "__main__":
+    app.run(host='0.0.0.0', port=8000)
