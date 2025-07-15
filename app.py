@@ -10,7 +10,7 @@ def hello():
 # Replace these with your actual storage details
 STORAGE_ACCOUNT = "staticstgci"
 CONTAINER_NAME = "$web"
-SAS_TOKEN = "sv=2024-11-04&ss=b&srt=sco&sp=rltfx&se=2025-07-15T19:22:02Z&st=2025-07-11T11:07:02Z&spr=https&sig=BiJU%2F23C47MWXiQgWpEcHVld%2BKUPh7G664C9xXPByXg%3D"
+SAS_TOKEN = "sp=rl&st=2025-07-08T12:04:59Z&se=2025-07-15T20:19:59Z&spr=https&sv=2024-11-04&sr=c&sig=NsrLETDg297yYhCZGhaEca1sfjN%2Fbxz2S94T1VBPcsg%3D"
 
 @app.route('/<site>/')
 @app.route('/<site>/<path:filename>')
